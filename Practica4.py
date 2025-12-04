@@ -1,3 +1,4 @@
+#LIBRERIAS/LIBRARIES
 from tkinter import *
 from tkinter import messagebox
 import sqlite3
@@ -5,18 +6,21 @@ from tkinter import ttk
 import tkinter as tk
 import random
 
+#CREACION BASE DE DATOS/DATABASE CREATION
 def crearBaseDatos():
     #CREA BASE DE DATOS tienda.db
+    #CREATES DATABASE tienda.db
     con = sqlite3.connect("tienda.db")
     #CURSOR PARA EJECUTAR COMANDOS SQL
+    #CURSOR TO EXECUTE SQL COMMANDS
     cursor = con.cursor()
-    #CREA LA TABLA productos
+    #CREA LA TABLA productos/CREATES TABLE productos
     cursor.execute("""CREATE TABLE IF NOT EXISTS productos(
                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
                    codigo TEXT NOT NULL,
                    producto TEXT NOT NULL, 
                    precio REAL NOT NULL)""")
-    #CREA LA TABLA almacen
+    #CREA LA TABLA almacen/CREATES TABLE almacen
     cursor.execute("""CREATE TABLE IF NOT EXISTS almacen(
                    id INTEGER PRIMARY KEY AUTOINCREMENT, 
                    codigoproducto TEXT NOT NULL,
@@ -25,8 +29,9 @@ def crearBaseDatos():
     con.commit()
     con.close()
 
-
+#CLASE PRINCIPAL/MAIN CLASS
 class Principal():
+    #TAMAÑO DE VENTANA/WINDOW SIZE
     def __init__(self, master):
         self.ven = master
         self.ven.title('Practica 2 Parcial 3')
@@ -38,10 +43,10 @@ class Principal():
         x = (ventana_alto // 2) - (ancho // 2)
         y = (ventana_ancho // 2) - (alto // 2)
         self.ven.geometry(f"{ancho}x{alto}+{x}+{y-100}")
-        #ELIMINAR UN REGISTRO
+        #ELIMINAR UN REGISTRO/DELETE A RECORD
         self.index = -1
 
-        
+    #INTERFAZ DE LA VENTANA/WINDOW INTERFACE    
     def inicio(self):
         self.us=Label(self.ven, text=f"CRUD DE PRODUCTOS")
         self.us.place(x=50,y=5)
@@ -57,17 +62,18 @@ class Principal():
         Label(self.ven, text="Cantidad").place(y=30,x=420)
         self.cantidad = Entry(self.ven)
         self.cantidad.place(y=50,x=420)
-        #TITULOS DE LA TABLA CREADA 
+        #TITULOS DE LA TABLA CREADA/TABLE HEADERS CREATED 
         columnas = ("ID","CODIGO","PRODUCTO","PRECIO","DESCRIPCION","STOCK")
-        #CREAR EL TREEVIEW
+        #CREAR EL TREEVIEW/CREATE THE TREEVIEW
         self.tabla = ttk.Treeview(self.ven, columns= columnas, show="headings")
         self.tabla.place(x=10, y=100, width=480,height=190)
 
         #MUESTRA TEXTO DEL ENCABEZADO IMPORTANTE
+        #DISPLAYS HEADER TEXT
         for col in columnas:
             self.tabla.heading(col,text=col)
             self.tabla.column(col, anchor="center", width=30)
-        #CREA BARRAS PARA DESPLAZARSE
+        #CREA BARRAS PARA DESPLAZARSE/CREATES SCROLLBARS
         scrolly = ttk.Scrollbar(self.ven,orient="vertical", command=self.tabla.yview)
         scrollx = ttk.Scrollbar(self.ven, orient="horizontal", command=self.tabla.xview)
         scrolly.place(x=480,y=90,height=200)
@@ -82,37 +88,48 @@ class Principal():
         self.eliminar = Button(self.ven, text="Eliminar", width=10, state="disabled", command=self.eliminarproducto)
         self.eliminar.place(x=210,y=320)
         
-        #SELECCIONAR UNA FILA
+        #SELECCIONAR UNA FILA/SELECT A ROW
         self.tabla.bind("<<TreeviewSelect>>", self.seleccionfila)
         #TRAE LOS DATOS DE LA BASE DE DATOS PARA AGREGARLOS AL TREEVIEW
+        #FETCH DATABASE DATA TO DISPLAY IN TREEVIEW
         self.mostrarDatos()
 
 
     def modificarproducto(self):
-        #OBTENER LA FILA SELECCIONADA EN LA TABLA 
+        #OBTENER LA FILA SELECCIONADA EN LA TABLA
+        #GET THE SELECTED ROW FROM THE TABLE 
         try:
             self.index = self.tabla.selection()[0]
         except:
             return
         #RECUPERA LOS VALORES DE LA FILA SELECCIONADA 
+        #RETRIEVE VALUES FROM SELECTED ROW
         valores = self.tabla.item(self.index,"values")
         #IDENTIFICADOR DEL PRODUCTO QUESE VA A MODIFICAR
+        #IDENTIFIER OF PRODUCT TO MODIFY
         id = valores[0]
         #OBTIENE LOS DATOS INGRESADOS POR EL USUARIO EN LAS CAJAS DE TEXTO
+        #GET DATA ENTERED BY USER
         pro = self.producto.get()
         pre = self.precio.get()
         des = self.descripcion.get()
         can = self.cantidad.get()
         #VERIFICA QUE NO TENGA CAJAS VACIAS 
+        #VERIFY THAT NO FIELDS ARE EMPTY
         if len(pro) != 0 and len(pre) != 0 and len(des)!= 0 and len(can)!= 0:
             codigo = pro[:2].upper() + str(random.randint(0,100)) + des[0].upper()
             #GENERA CODIGO: PRIMERAS 2 LETRAS DEL NOMBRE 
             #               NUMERO ALEATORIO ENTRE 0 Y 100 
             #               PRIMERA LETRA DE LA DESCRIPCION 
-            #CONECTA CON LA BASE DE DATOS
+            #GENERATE CODE: FIRST 2 LETTERS OF PRODUCT
+            #               RANDOM NUMBER 0-100
+            #               FIRST LETTER OF DESCRIPTION
+
+            #CONECTA CON LA BASE DE DATOS/CONNECT TO DATABASE
             con = sqlite3.connect("tienda.db")
             cursor = con.cursor()
             #ACTUALIZA LOS DATOS DEL PRODUCTO EN PRODUCTO Y ALMACEN
+            #UPDATE PRODUCT DATA IN productos AND almacen
             cursor.execute("UPDATE productos SET codigo=?, producto=?, precio=? WHERE id=?",(codigo,pro,pre,id))
             cursor.execute("UPDATE almacen SET codigoproducto=?, stock=?, descripcion=? WHERE id=?",(codigo,can,des,id))
             
@@ -121,6 +138,7 @@ class Principal():
             self.limpiarcajas()
             self.actulizartable()
             #ACTIVA Y DESACTIVA LOS BOTONES 
+            #ENABLE/DISABLE BUTTONS
             self.agregar.config(state="normal")
             self.modificar.config(state="disabled")
             self.eliminar.config(state="disabled")
@@ -200,6 +218,8 @@ class Principal():
             cursor = con.cursor()
             #ABRE BASE DE DATOS Y EJECUTA UNA CONSULTA PARA BUSCAR 
             #EL PRODUCTO QUE TENGA EL MISMO NOMBRE Y DESCRIPCION
+            #OPENS DB AND EXECUTES A QUERY TO SEARCH
+            #FOR A PRODUCT WITH SAME NAME AND DESCRIPTION
             cursor.execute("""
                 SELECT productos.*, almacen.*
                 FROM productos
@@ -207,6 +227,7 @@ class Principal():
                 WHERE productos.producto = ? AND almacen.descripcion = ?
             """, (p, d))
             #DEVUELVE LA PRIMERA COINCIDENCIA ENCONTRANDO NONE SI NO EXISTE
+            #RETURNS FIRST MATCH OR NONE IF NOT FOUND
             resultado = cursor.fetchone()
             con.commit()
             cursor.close()
@@ -218,6 +239,7 @@ class Principal():
 
     def agregarproducto(self):
         #REVISA SI YA EXISTE UN PRODUCTO CON EL MISMO NOMBRE
+        #CHECKS IF PRODUCT WITH SAME NAME ALREADY EXISTS
         if self.verificar():
             id = self.verificar()
             print(id)
@@ -231,6 +253,7 @@ class Principal():
                 con = sqlite3.connect("tienda.db")
                 cursor = con.cursor()
                 #ACTUALIZA PRECIO (PRODUCTOS) Y STOCK (ALMACEN)
+                #UPDATES PRICE (productos) AND STOCK (almacen)
                 cursor.execute("UPDATE productos SET precio=? WHERE producto=?",(pr,p))
                 cursor.execute("UPDATE almacen SET stock=? WHERE descripcion=?",(s,d))
                 
@@ -239,7 +262,8 @@ class Principal():
                 self.limpiarcajas()
                 self.actulizartable()
         else:
-            #CONCIERTE PRECIO FLOAT Y CANTIDAD ENTERO
+            #CONVIERTE PRECIO FLOAT Y CANTIDAD ENTERO
+            #CONVERTS PRICE TO FLOAT AND QUANTITY TO INT
             prf = 0.0
             st = 0
 
@@ -252,10 +276,12 @@ class Principal():
                 prf = float(pr)
                 st = int(s)
                 #GENERA CODIGO ALEATORIO PARA EL PRODUCTO 
+                #GENERATES RANDOM PRODUCT CODE
                 codigo = p[:2].upper() + str(random.randint(0,100)) + d[0].upper()  
                 con = sqlite3.connect("tienda.db")
                 cursor = con.cursor()
                 #INSERTA LOS DATOS EN LAS TABLAS 
+                #INSERTS THE DATA INTO TABLES
                 cursor.execute("INSERT INTO productos (codigo,producto,precio) VALUES (?,?,?)",(codigo, p,prf))
                 cursor.execute("INSERT INTO almacen (codigoproducto,descripcion,stock) VALUES (?,?,?)",(codigo,d,st))
                 con.commit()
